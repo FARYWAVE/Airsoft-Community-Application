@@ -1,48 +1,23 @@
-import socket
-from threading import Thread
-from PyQt5 import *
-from PyQt5.QtWidgets import QApplication, QMainWindow
-
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
 import sys
+from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton
+from PyQt5.QtGui import QIcon
 
 
-app = QApplication(sys.argv)
-win = QMainWindow()
-win.setWindowTitle("Начало")
-win.setGeometry(0, 0, 500, 500)
-win2 = QMainWindow()
-win2.setWindowTitle("Нашёл")
-win2.setGeometry(100, 100, 500, 500)
-win.show()
-i = 0
-while 1:
-    try:
-        s.connect(('176.99.158.212', 7777))
-        win.close()
-        win2.show()
-        break
-    except WindowsError:
-        i += 1
-        print(i)
+class Window(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setGeometry(100, 100, 300, 200)
 
+        button = QPushButton(self)
+        button.move(100, 50)
+        button.clicked.connect(self.on_click)
 
-class GetMsg(Thread):
-    def run(self):
-        while True:
-            data = s.recv(1024)
-            if not data.decode('utf-8') == "":
-                print(data.decode('utf-8'), end='\n')
-
-
-class SendMsg(Thread):
-    def run(self):
-        while True:
-            inp = input()
-            s.sendall(inp.encode('utf-8'))
+    def on_click(self):
+        print('Button clicked')
 
 
 if __name__ == '__main__':
-    get = GetMsg().start()
-    snd = SendMsg().start()
+    app = QApplication(sys.argv)
+    window = Window()
+    window.show()
+    sys.exit(app.exec_())
