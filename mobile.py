@@ -6,11 +6,20 @@ from PyQt5.QtWidgets import QTableWidgetItem, QLineEdit, QCheckBox, QInputDialog
 from PyQt5.QtGui import *
 from PyQt5.QtCore import Qt, QRect
 from PyQt5.QtWidgets import QTableWidget, QApplication, QPushButton, QWidget, QAction, QTabWidget, QVBoxLayout, QLabel
-from PyQt5.QtGui import QPainter, QColor
+from PyQt5.QtGui import QPainter, QColor, QIcon
 
 kx = 0
 ky = 0
 km = 0
+
+profile_on = QIcon('pictures/profile_on')
+profile_off = QIcon('pictures/profile_off')
+games_on = QIcon('pictures/games_on')
+games_off = QIcon('pictures/games_off')
+team_on = QIcon('pictures/team_on')
+team_off = QIcon('pictures/team_off')
+create_on = QIcon('pictures/create_on')
+create_off = QIcon('pictures/create_off')
 
 
 def set_sizes(widget, size_x, size_y, pos_x, pos_y):
@@ -191,6 +200,7 @@ class Registration_Window(QWidget):  # Создаем окно регистра�
 
     def TYPE(self, text):
         self.end_type = text
+
     def rem(self, a):  # функция для кнопки запомнить меня
         if a == Qt.Checked:
             self.save = True
@@ -514,6 +524,77 @@ class Enter_Window(QWidget):  # Создаем окно для входа
         self.Main_Window = Games_Window()
         self.Main_Window.show()
 
+    def paintEvent(self, event):
+        qp = QPainter()
+        qp.begin(self)
+        self.title(qp)
+        qp.end()
+
+    def title(self, qp):
+        qp.setBrush(QColor(214, 218, 191))
+        qp.drawRect(0, 0, round(1080 * kx), round(250 * ky))
+        qp.drawRect(0, round(1850 * ky), round(1080 * kx), round(250 * ky))
+
+    def open_registration_window(self):  # Функция возвращения на экран регистрации
+        self.Registration_Window = Registration_Window()
+        self.Registration_Window.show()
+        self.close()
+
+
+class Games_Window(QWidget):  # окно с играми
+    def __init__(self):
+        super().__init__()
+        self.initUI()
+
+        self.profile_opened = False
+        self.team_opened = False
+
+    def initUI(self):
+        global profile_on, profile_off, games_on, games_off, create_on, create_off, team_on, team_off, kx, ky
+        self.setGeometry(0, 0, round(1080 * kx), round(2100 * ky))
+        self.setWindowTitle('Games')
+
+        self.create_btn = QPushButton(self)
+        self.create_btn.setIcon(create_off)
+        self.create_btn.setFixedSize(create_off.actualSize(self.create_btn.size()))
+        self.create_btn.move(round(kx * 176), round(ky * 1500))
+
+        self.team_btn = QPushButton(self)
+        self.team_btn.setIcon(team_off)
+        self.team_btn.setFixedSize(team_off.actualSize(self.team_btn.size()))
+        self.team_btn.move(round(kx * 402), round(ky * 2000))
+
+        self.games_btn = QPushButton(self)
+        self.games_btn.setIcon(games_on)
+        self.games_btn.setFixedSize(games_off.actualSize(self.games_btn.size()))
+        self.games_btn.move(round(kx * 628), round(ky * 2000))
+
+        self.profile_btn = QPushButton(self)
+        self.profile_btn.setIcon(profile_off)
+        self.profile_btn.setFixedSize(profile_off.actualSize(self.profile_btn.size()))
+        self.profile_btn.move(round(kx * 854), round(ky * 2000))
+
+        self.welcome = QLabel(self)
+        self.welcome.setText('<h1 style="color: rgb(0, 0, 0);">Ближайшие игры</h1>')
+        self.welcome = set_sizes(self.welcome, 900, 100, 220, 60)
+        self.welcome.setFont(QFont('Arial', round(14 * km) * 2))
+
+        self.con = sqlite3.connect("ASA.sqlite")
+        self.cur = self.con.cursor()
+        self.games_data = self.cur.execute("""SELECT * FROM Games""").fetchall()
+        self.con.close()
+
+        self.games = QTableWidget(self)
+        self.games.setColumnCount(6)
+        self.games.setRowCount(30)
+        self.games.setHorizontalHeaderLabels(['Название', 'Тип', 'Организатор', 'Дата', 'Полигон', 'Стоимость'])
+        self.games = set_sizes(self.games, 1000, 1500, 35, 260)
+        for x in range(5):
+            data = self.games_data[x]
+            for i in range(6):
+                self.games.setItem(x, i, QTableWidgetItem(data[i]))
+        self.games.setFont(QFont('Arial', 10))
+        self.games.resizeColumnsToContents()
 
     def paintEvent(self, event):
         qp = QPainter()
@@ -525,68 +606,8 @@ class Enter_Window(QWidget):  # Создаем окно для входа
         qp.setBrush(QColor(214, 218, 191))
         qp.drawRect(0, 0, round(1080 * kx), round(250 * ky))
         qp.drawRect(0, round(1850 * ky), round(1080 * kx), round(250 * ky))
-    def open_registration_window(self):  # Функция возвращения на экран регистрации
-        self.Registration_Window = Registration_Window()
-        self.Registration_Window.show()
-        self.close()
 
-
-class Games_Window(QWidget): # окно с играми
-    def __init__(self):
-        super().__init__()
-        self.initUI()
-
-        self.profile_opened = False
-        self.team_opened = False
-
-    def initUI(self):
-        self.setGeometry(660, 400, 600, 450)
-        self.setWindowTitle('Airsoft Sports Application')
-
-        self.open_team = QPushButton('< Моя команда', self)
-        self.open_team.resize(185, 40)
-        self.open_team.move(22, 388)
-        self.open_team.clicked.connect(self.open_team_win)
-        self.open_team.setFont(QFont('Arial', 13))
-
-        self.open_profile = QPushButton('Профиль >', self)
-        self.open_profile.resize(185, 40)
-        self.open_profile.move(394, 388)
-        self.open_profile.clicked.connect(self.open_profile_win)
-        self.open_profile.setFont(QFont('Arial', 13))
-
-        self.close_evr = QPushButton('Закрыть все окна', self)
-        self.close_evr.resize(185, 40)
-        self.close_evr.move(208, 388)
-        self.close_evr.clicked.connect(self.close_whole)
-        self.close_evr.setFont(QFont('Arial', 13))
-
-        self.title_txt = QLabel(self)
-        self.title_txt.setText('Предстоящие Игры')
-        self.title_txt.move(180, 10)
-        self.title_txt.setFont(QFont('Arial', 20))
-        self.title_txt.resize(250, 35)
-
-        self.con = sqlite3.connect("ASA.sqlite")
-        self.cur = self.con.cursor()
-        self.games_data = self.cur.execute("""SELECT * FROM Games""").fetchall()
-        self.con.close()
-
-        self.games = QTableWidget(self)
-        self.games.setColumnCount(6)
-        self.games.setRowCount(5)
-        self.games.setHorizontalHeaderLabels(['Название', 'Тип', 'Организатор', 'Дата', 'Полигон', 'Стоимость'])
-        self.games.resize(556, 300)
-        self.games.move(22, 72)
-        for x in range(5):
-            data = self.games_data[x]
-            for i in range(6):
-                self.games.setItem(x, i, QTableWidgetItem(data[i]))
-        self.games.setFont(QFont('Arial', 10))
-        self.games.resizeColumnsToContents()
-
-
-    def open_team_win(self): # открытие окна команды
+    def open_team_win(self):  # открытие окна команды
         self.user = open('User.txt')
         self.data = self.user.read().split('!')
         self.user.close()
@@ -618,7 +639,7 @@ class Games_Window(QWidget): # окно с играми
             self.app1.show()
             self.open_team.setText('> Моя команда')
 
-    def open_profile_win(self): # открытие окна профиля
+    def open_profile_win(self):  # открытие окна профиля
         if self.profile_opened is True:
             self.profile_opened = False
             self.app2 = Profile_Window()
@@ -631,27 +652,15 @@ class Games_Window(QWidget): # окно с играми
             self.app2.show()
             self.open_profile.setText('Профиль <')
 
-    def close_whole(self): # закрытие всех окон
+    def close_whole(self):  # закрытие всех окон
         self.app2 = Profile_Window()
         self.app1 = No_Team_Window()
         self.app1.close()
         self.app2.close()
         self.close()
 
-    def paintEvent(self, event):
-        qp = QPainter()
-        qp.begin(self)
-        self.title(qp)
-        qp.end()
 
-    def title(self, qp):
-        qp.setBrush(QColor(200, 200, 200))
-        qp.drawRect(0, 0, 600, 50)
-        qp.setBrush(QColor(0, 0, 0))
-        qp.drawLine(0, 50, 600, 50)
-
-
-class No_Team_Window(QWidget): # окно игроков без команды
+class No_Team_Window(QWidget):  # окно игроков без команды
     def __init__(self):
         super().__init__()
         self.initUI()
@@ -690,7 +699,7 @@ class No_Team_Window(QWidget): # окно игроков без команды
         self.title_txt.setFont(QFont('Arial', 20))
         self.title_txt.resize(150, 35)
 
-    def crt_team(self): # функция для создания команды
+    def crt_team(self):  # функция для создания команды
         self.crt_tm = Create_Team_Window()
         self.crt_tm.show()
 
@@ -707,7 +716,7 @@ class No_Team_Window(QWidget): # окно игроков без команды
         qp.drawLine(0, 50, 415, 50)
 
 
-class Profile_Window(QWidget): # окно профиля
+class Profile_Window(QWidget):  # окно профиля
     def __init__(self):
         super().__init__()
         self.initUI()
@@ -723,7 +732,7 @@ class Profile_Window(QWidget): # окно профиля
 
         self.cams = [False, False, False, False, False, False, False]
 
-        self.user = open('User.txt')     # поля с данными, все аналогично окну регистрациии
+        self.user = open('User.txt')  # поля с данными, все аналогично окну регистрациии
         self.data = self.user.read().split('!')
         self.enter_number = QLabel(self)  # Поля для ввода данных
         self.enter_number.setText("Номер телефона")
@@ -920,8 +929,7 @@ class Profile_Window(QWidget): # окно профиля
         self.leave_account.clicked.connect(self.leave)
         self.leave_account.setFont(QFont('Arial', 13))
 
-
-    def save(self):   # проверка изменений и их сохранение
+    def save(self):  # проверка изменений и их сохранение
         self.end_number = []
         self.number = list(self.input_number.text())
         for x in self.number:
@@ -1185,7 +1193,7 @@ class Profile_Window(QWidget): # окно профиля
         qp.drawLine(0, 50, 415, 50)
 
 
-class Team_Window(QWidget): # окно игрока состоящего в команде
+class Team_Window(QWidget):  # окно игрока состоящего в команде
     def __init__(self):
         super().__init__()
         self.initUI()
@@ -1331,7 +1339,7 @@ class Create_Team_Window(QWidget):  # окно создания команды
         qp.drawLine(0, 50, 415, 50)
 
 
-class My_Team_Window(QWidget): # окно команды для капитана
+class My_Team_Window(QWidget):  # окно команды для капитана
     def __init__(self):
         super().__init__()
         self.initUI()
@@ -1387,7 +1395,7 @@ class My_Team_Window(QWidget): # окно команды для капитана
 
         self.players_count = len(self.team_data[0][1].split(', '))
         self.players = QLabel(self)
-        self.players.setText('Члены команды (' + str(self.players_count) +')')
+        self.players.setText('Члены команды (' + str(self.players_count) + ')')
         self.players.move(22, 225)
         self.players.setFont(QFont('Arial', 14))
 
@@ -1457,6 +1465,7 @@ class My_Team_Window(QWidget): # окно команды для капитана
         qp.drawRect(0, 0, 415, 50)
         qp.setBrush(QColor(0, 0, 0))
         qp.drawLine(0, 50, 415, 50)
+
 
 def start():  # Запуск и выключение программы
     app = QApplication(sys.argv)
